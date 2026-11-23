@@ -1,0 +1,220 @@
+{
+ "source": "gurbani-timestamper/app_data/ang*.json (Gursevak vishraam text, CTC-aligned)",
+ "angs": 1430,
+ "panktis": 60610,
+ "words": 396404,
+ "vocab_words": 25643,
+ "trigrams": 34152,
+ "trigram_df_cap": 400,
+ "total_raw_bytes": 28924305,
+ "total_gz_bytes": 7343535,
+ "files": [
+  {
+   "file": "vocab.json",
+   "raw": 2984553,
+   "gz": 1173278
+  },
+  {
+   "file": "trigrams.json",
+   "raw": 5277028,
+   "gz": 2301127
+  },
+  {
+   "file": "shard-0001-0100.json",
+   "raw": 1440399,
+   "gz": 266101
+  },
+  {
+   "file": "shard-0101-0200.json",
+   "raw": 1479619,
+   "gz": 273339
+  },
+  {
+   "file": "shard-0201-0300.json",
+   "raw": 1530849,
+   "gz": 285554
+  },
+  {
+   "file": "shard-0301-0400.json",
+   "raw": 1474845,
+   "gz": 283669
+  },
+  {
+   "file": "shard-0401-0500.json",
+   "raw": 1444790,
+   "gz": 270926
+  },
+  {
+   "file": "shard-0501-0600.json",
+   "raw": 1419432,
+   "gz": 256177
+  },
+  {
+   "file": "shard-0601-0700.json",
+   "raw": 1415331,
+   "gz": 261874
+  },
+  {
+   "file": "shard-0701-0800.json",
+   "raw": 1401137,
+   "gz": 262143
+  },
+  {
+   "file": "shard-0801-0900.json",
+   "raw": 1436420,
+   "gz": 272934
+  },
+  {
+   "file": "shard-0901-1000.json",
+   "raw": 1446150,
+   "gz": 272482
+  },
+  {
+   "file": "shard-1001-1100.json",
+   "raw": 1494699,
+   "gz": 281474
+  },
+  {
+   "file": "shard-1101-1200.json",
+   "raw": 1439304,
+   "gz": 272153
+  },
+  {
+   "file": "shard-1201-1300.json",
+   "raw": 1414631,
+   "gz": 265423
+  },
+  {
+   "file": "shard-1301-1400.json",
+   "raw": 1400368,
+   "gz": 264561
+  },
+  {
+   "file": "shard-1401-1430.json",
+   "raw": 424750,
+   "gz": 80320
+  }
+ ],
+ "shards": [
+  {
+   "file": "shard-0001-0100.json",
+   "raw": 1440399,
+   "gz": 266101,
+   "ang_from": 1,
+   "ang_to": 100,
+   "panktis": 4034
+  },
+  {
+   "file": "shard-0101-0200.json",
+   "raw": 1479619,
+   "gz": 273339,
+   "ang_from": 101,
+   "ang_to": 200,
+   "panktis": 4664
+  },
+  {
+   "file": "shard-0201-0300.json",
+   "raw": 1530849,
+   "gz": 285554,
+   "ang_from": 201,
+   "ang_to": 300,
+   "panktis": 5136
+  },
+  {
+   "file": "shard-0301-0400.json",
+   "raw": 1474845,
+   "gz": 283669,
+   "ang_from": 301,
+   "ang_to": 400,
+   "panktis": 4616
+  },
+  {
+   "file": "shard-0401-0500.json",
+   "raw": 1444790,
+   "gz": 270926,
+   "ang_from": 401,
+   "ang_to": 500,
+   "panktis": 4033
+  },
+  {
+   "file": "shard-0501-0600.json",
+   "raw": 1419432,
+   "gz": 256177,
+   "ang_from": 501,
+   "ang_to": 600,
+   "panktis": 3759
+  },
+  {
+   "file": "shard-0601-0700.json",
+   "raw": 1415331,
+   "gz": 261874,
+   "ang_from": 601,
+   "ang_to": 700,
+   "panktis": 4013
+  },
+  {
+   "file": "shard-0701-0800.json",
+   "raw": 1401137,
+   "gz": 262143,
+   "ang_from": 701,
+   "ang_to": 800,
+   "panktis": 3920
+  },
+  {
+   "file": "shard-0801-0900.json",
+   "raw": 1436420,
+   "gz": 272934,
+   "ang_from": 801,
+   "ang_to": 900,
+   "panktis": 4468
+  },
+  {
+   "file": "shard-0901-1000.json",
+   "raw": 1446150,
+   "gz": 272482,
+   "ang_from": 901,
+   "ang_to": 1000,
+   "panktis": 4141
+  },
+  {
+   "file": "shard-1001-1100.json",
+   "raw": 1494699,
+   "gz": 281474,
+   "ang_from": 1001,
+   "ang_to": 1100,
+   "panktis": 4501
+  },
+  {
+   "file": "shard-1101-1200.json",
+   "raw": 1439304,
+   "gz": 272153,
+   "ang_from": 1101,
+   "ang_to": 1200,
+   "panktis": 4543
+  },
+  {
+   "file": "shard-1201-1300.json",
+   "raw": 1414631,
+   "gz": 265423,
+   "ang_from": 1201,
+   "ang_to": 1300,
+   "panktis": 3955
+  },
+  {
+   "file": "shard-1301-1400.json",
+   "raw": 1400368,
+   "gz": 264561,
+   "ang_from": 1301,
+   "ang_to": 1400,
+   "panktis": 3758
+  },
+  {
+   "file": "shard-1401-1430.json",
+   "raw": 424750,
+   "gz": 80320,
+   "ang_from": 1401,
+   "ang_to": 1430,
+   "panktis": 1069
+  }
+ ]
+}

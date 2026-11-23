@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pankti Search — Recite a line, find it</title>
+<meta name="description" content="Search by voice across all 1,430 Angs of Sri Guru Granth Sahib Ji. Recite part of a pankti and get fuzzy ranked results with Ang numbers.">
+<style>
+  :root{
+    --bg:#faf6ef; --card:#ffffff; --ink:#2b2118; --muted:#7a6a58;
+    --accent:#b3540a; --accent-ink:#ffffff; --line:#e7dcc9;
+    --major:#c0392b; --minor:#1e7a46;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans Gurmukhi","Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-text-size-adjust:100%;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+  header{text-align:center;padding:8px 0 4px}
+  header h1{font-size:26px;margin:0 0 4px;font-weight:700;letter-spacing:.2px}
+  header p{margin:0;color:var(--muted);font-size:15px}
+  .status{
+    margin:14px auto 0;max-width:460px;text-align:center;font-size:13.5px;color:var(--muted);
+    min-height:20px;
+  }
+  .status[aria-live]{}
+  .mic-zone{display:flex;flex-direction:column;align-items:center;padding:22px 0 6px}
+  #micBtn{
+    width:112px;height:112px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--accent);color:var(--accent-ink);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 20px rgba(179,84,10,.35);
+    -webkit-tap-highlight-color:transparent;
+  }
+  #micBtn svg{width:52px;height:52px;fill:currentColor}
+  #micBtn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+  #micBtn:disabled{opacity:.45;cursor:default;box-shadow:none}
+  #micBtn.listening{animation:pulse 1.4s ease-in-out infinite;background:#a02c22}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+  @media (prefers-reduced-motion: reduce){ #micBtn.listening{animation:none} }
+  .mic-hint{margin-top:12px;font-size:15px;color:var(--muted);text-align:center;min-height:22px}
+  .divider{display:flex;align-items:center;gap:12px;margin:22px 0 12px;color:var(--muted);font-size:13.5px}
+  .divider::before,.divider::after{content:"";flex:1;border-top:1px solid var(--line)}
+  .search-row{display:flex;gap:8px}
+  #queryInput{
+    flex:1;min-width:0;font:inherit;font-size:17px;padding:13px 14px;
+    border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);
+  }
+  #queryInput:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  #searchBtn{
+    font:inherit;font-size:16px;font-weight:600;padding:13px 20px;min-height:48px;
+    border:none;border-radius:12px;background:var(--ink);color:#fff;cursor:pointer;
+  }
+  #searchBtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  #searchBtn:disabled{opacity:.45;cursor:default}
+  .heard{
+    margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;display:none;
+  }
+  .heard.show{display:block}
+  .heard .label{font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .heard .text{font-size:18px;margin-top:4px;overflow-wrap:break-word}
+  .heard .text .interim{color:var(--muted)}
+  .lowconf{
+    display:none;margin-top:14px;background:#fdf3e3;border:1px solid #ecd9ae;color:#6d5312;
+    border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.45;
+  }
+  .lowconf.show{display:block}
+  .noresults{display:none;margin-top:18px;text-align:center;color:var(--muted);font-size:15px;line-height:1.5;padding:8px}
+  .noresults.show{display:block}
+  #results{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+  .more-btn{
+    display:block;margin:14px auto 0;font:inherit;font-size:15px;font-weight:600;
+    padding:12px 22px;min-height:48px;border:1.5px solid var(--line);border-radius:12px;
+    background:var(--card);color:var(--accent);cursor:pointer;
+  }
+  .more-btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .card{
+    display:block;text-decoration:none;color:inherit;background:var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 12px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .card:active{background:#fdf9f2}
+  .card:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .pankti{
+    font-family:"Noto Serif Gurmukhi","Noto Sans Gurmukhi",serif;
+    font-size:20px;line-height:1.65;overflow-wrap:break-word;
+  }
+  .pankti .vmaj{color:var(--major)}
+  .pankti .vmin{color:var(--minor)}
+  .meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+  .ang{font-weight:700;font-size:15px;color:var(--accent)}
+  .angs-note{font-size:13px;color:var(--muted)}
+  .dots{margin-left:auto;font-size:13px;letter-spacing:2px;color:var(--accent);white-space:nowrap}
+  .dots .off{color:var(--line)}
+  .open-hint{font-size:13px;color:var(--muted)}
+  footer{margin-top:28px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.55}
+  progress{width:100%;max-width:460px;height:6px;appearance:none}
+  progress::-webkit-progress-bar{background:var(--line);border-radius:3px}
+  progress::-webkit-progress-value{background:var(--accent);border-radius:3px}
+  .loadbar{display:none;justify-content:center;margin-top:8px}
+  .loadbar.show{display:flex}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ਪੰਕਤੀ ਖੋਜ</h1>
+    <p>Recite a line of Gurbani — find its Ang</p>
+  </header>
+
+  <div class="status" id="status" role="status" aria-live="polite">Loading the search index…</div>
+  <div class="loadbar" id="loadbar"><progress id="loadprog" max="100" value="10" aria-label="Loading index"></progress></div>
+
+  <div class="mic-zone">
+    <button id="micBtn" type="button" aria-label="Tap and recite a pankti" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm7-3a7 7 0 0 1-13.7 1.6l1.5.4A5.5 5.5 0 0 0 17.5 12h1.5zm-6.5 5.1V20h3v2h-7v-2h3v-2.9A7 7 0 0 1 5 12H6.5a5.5 5.5 0 0 0 5 5.1z" transform="translate(0,-1)"/></svg>
+    </button>
+    <div class="mic-hint" id="micHint">Tap and recite a pankti</div>
+  </div>
+
+  <div class="divider" aria-hidden="true">or type / paste</div>
+
+  <form class="search-row" id="searchForm" role="search">
+    <label for="queryInput" class="sr" style="position:absolute;left:-9999px">Type or paste a pankti</label>
+    <input id="queryInput" type="text" lang="pa" autocomplete="off" autocapitalize="off"
+           placeholder="ਪੰਕਤੀ ਇੱਥੇ ਲਿਖੋ…" aria-label="Type or paste a pankti">
+    <button id="searchBtn" type="submit" disabled>Search</button>
+  </form>
+
+  <div class="heard" id="heardBox">
+    <div class="label">Heard</div>
+    <div class="text" id="heardText"></div>
+  </div>
+
+  <div class="lowconf" id="lowconf" role="note"></div>
+  <div class="noresults" id="noresults">No close match found.<br>Try reciting a few more words of the line, or check the words above and search again.</div>
+
+  <main id="results" aria-label="Search results"></main>
+  <button id="moreBtn" class="more-btn" type="button" style="display:none">Show 5 more</button>
+
+  <footer>
+    Searching all 1,430 Angs · 60,610 panktis<br>
+    Tapping a result opens the Gurbani Reader at that Ang (best effort — the Reader does not support Ang links yet, so note the Ang number).
+  </footer>
+</div>
+
+<script src="src/transliterate.js"></script>
+<script src="src/matcher.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
