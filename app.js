@@ -6,8 +6,10 @@
  *      (Matcher.candidates only touches those), find which shards hold
  *      the top-300 candidate panktis, fetch ONLY those shards, then re-rank.
  *   Shards are cached after first fetch, so later searches get faster.
- * Result cards link to the Reader with ?ang=N — best effort only: the Reader
- * has no query-param routing yet (see docs/DESIGN.md §4).
+ * Result cards link to the Reader with ?ang=N&line=L — the Reader lands
+ * on that exact pankti as the focus, as a detour: its saved place/focus
+ * and every Sehaj Paath snapshot stay untouched (see the Reader's
+ * CONTEXT.md, deep-link detour).
  * Confidence bands (Gemini §1.4 Q5): matcher score IS the normalized score.
  *   >= 0.78 high · 0.55–0.77 medium · < 0.55 OR < 8 folded chars low.
  */
@@ -161,7 +163,7 @@
       var r = g.best;
       var a = document.createElement("a");
       a.className = "card";
-      a.href = READER_URL + r.ang;
+      a.href = READER_URL + r.ang + "&line=" + r.line;
       a.target = "_blank"; a.rel = "noopener";
       a.setAttribute("aria-label", "Ang " + r.ang + ", " + confWord(r.score) + ": " + r.text);
       var p = document.createElement("div");
