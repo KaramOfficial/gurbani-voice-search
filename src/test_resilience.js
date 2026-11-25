@@ -33,6 +33,7 @@ named("rotated (roman)", "bhai re man eko sahib", 156);
 named("rotated (gurmukhi)", "ਭਾਈ ਰੇ ਮਨ ਏਕੋ ਸਾਹਿਬੁ", 156);
 named("adjacent swap (roman)", "man sahib eko bhai re", 156);
 named("kirtan half-swap (roman)", "main mila aap sawaaryai", 1382);
+named("bleed + weak transliteration (sawarehe)", "fareeda aap sawarehe main mila", 1382);
 
 // --- generated cases over sampled panktis ---
 let seed = 7;

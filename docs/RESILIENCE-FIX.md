@@ -128,3 +128,23 @@ deploy was "built" — the owner retested three times, including a
 full browser restart, and kept getting the old code, while other
 edges already served the new file. A versioned URL is a new URL: no
 cache anywhere has it.)
+
+## Addendum (same day) — ordered-run bonus
+
+Owner's next field case: `fareeda aap sawarehe main mila` ranked the
+PREVIOUS line (ਫਰੀਦਾ ਲੋਕਾਂ ਆਪੋ ਆਪਣੀ ਮੈ ਆਪਣੀ ਪਈ ॥੯੪॥) above the target.
+Cause: the spelling "sawarehe" transliterates to ਸਬਰੇਹੇ, simPhon 0.50
+against ਸਬਾਰਹ — under the 0.65 clamp the line's most identifying word
+earned zero, while ਫਰੀਦਾ (idf 9.1, a heavy word) matched the previous
+line exactly. Lowering the clamp to 0.50 was tried and REJECTED: weak
+fuzzy credit lifts every wrong ਫਰੀਦਾ line too (the sawaaryai case
+regressed to a wrong Ang). Shipped instead: an **ordered-run bonus** —
++0.03 per extra word of the longest run of consecutive query words
+appearing consecutively in order in the target (per-word sim ≥ 0.50
+counts), capped +0.09, only for queries of 4+ words (the gate matters:
+without it, 3-word fragments regressed — a 2-word run is too easy to
+fake). The true line contains the recited phrase; a neighbour line
+only shares scattered words. Gate results vs the pre-addendum build:
+matcher 100/100, stress top-1 98.7% (identical), gemini 21/21,
+resilience named 11/11 (new sawarehe case added), generated 99.5%
+top-1 (up from 99.1). Latency ~356 ms/q Node.

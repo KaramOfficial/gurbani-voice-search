@@ -415,6 +415,25 @@
     return tot;
   };
 
+  // Longest run of consecutive query words appearing consecutively, in
+  // order, in the target (per-word simPhon >= 0.5 counts as a match).
+  // Rewards a candidate that matches a whole spoken PHRASE, not just
+  // scattered words — the previous line on the Ang often shares the
+  // extra/bleed word plus a couple of common words, but only the true
+  // line contains the recited phrase itself.
+  function longestRun(H, T) {
+    var best = 0;
+    for (var i = 0; i < H.length; i++) {
+      for (var j = 0; j < T.length; j++) {
+        var k = 0;
+        while (i + k < H.length && j + k < T.length &&
+               (H[i + k] === T[j + k] || simPhon(H[i + k], T[j + k]) >= 0.5)) k++;
+        if (k > best) best = k;
+      }
+    }
+    return best;
+  }
+
   function isContiguousSubseq(H, T) {
     if (!H.length || H.length > T.length) return false;
     outer:
@@ -455,6 +474,8 @@
       var ovl = self.overlapScore(heard, T);
       var bonus = 0;
       if (heard.length >= 2 && isContiguousSubseq(heard, T)) bonus += 0.05;
+      var run = longestRun(heard, T);
+      if (run >= 2 && heard.length >= 4) bonus += Math.min(0.09, 0.03 * (run - 1));
       if (p.f) {
         var fset = {};
         p.f.forEach(function (t) { fset[t] = true; });
