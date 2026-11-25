@@ -49,6 +49,9 @@ function variants(p) {
   const out = {};
   const next = byId[p.id + 1];
   if (next && next.a === p.a && next.f.length) out.nextLineBleed = [next.f[0]].concat(f.slice(0, 5)).join(" ");
+  const prev = byId[p.id - 1];
+  if (prev && prev.a === p.a && prev.f.length) out.prevLineBleed = prev.f.slice(-1).concat(f.slice(0, 5)).join(" ");
+  if (prev && prev.a === p.a && prev.f.length >= 2) out.prevLineBleed2 = prev.f.slice(-2).concat(f.slice(0, 5)).join(" ");
   const other = eligible[Math.floor(rnd() * eligible.length)];
   out.insertWord = f.slice(0, 2).concat([other.f[1] || other.f[0]], f.slice(2, 5)).join(" ");
   out.rotate2 = f.slice(2).concat(f.slice(0, 2)).join(" ");
