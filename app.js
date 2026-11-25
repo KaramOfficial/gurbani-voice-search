@@ -11,7 +11,7 @@
  * and every Sehaj Paath snapshot stay untouched (see the Reader's
  * CONTEXT.md, deep-link detour).
  * Confidence bands (Gemini §1.4 Q5): matcher score IS the normalized score.
- *   >= 0.78 high · 0.55–0.77 medium · < 0.55 OR < 8 folded chars low.
+ *   >= 0.78 high · 0.50–0.77 medium · < 0.50 OR < 8 folded chars low (bands recalibrated 2026-11-25 for the resilience score — docs/RESILIENCE-FIX.md).
  */
 (function () {
   "use strict";
@@ -93,13 +93,13 @@
   }
 
   function dots(score) {
-    var n = score >= 0.78 ? 4 : score >= 0.65 ? 3 : score >= 0.55 ? 2 : 1;
+    var n = score >= 0.78 ? 4 : score >= 0.65 ? 3 : score >= 0.50 ? 2 : 1;
     var s = "";
     for (var i = 0; i < 4; i++) s += i < n ? "●" : "○";
     return s;
   }
   function confWord(score) {
-    return score >= 0.78 ? "strong match" : score >= 0.55 ? "fair match" : "weak match";
+    return score >= 0.78 ? "strong match" : score >= 0.50 ? "fair match" : "weak match";
   }
 
   // Group duplicates keyed on the EXACT original (unfolded) pankti text
@@ -135,7 +135,7 @@
     var band = null;
     if (groups.length) {
       var top = groups[0].best.score;
-      band = (foldedChars < 8 || top < 0.55) ? "low" : top < 0.78 ? "medium" : "high";
+      band = (foldedChars < 8 || top < 0.50) ? "low" : top < 0.78 ? "medium" : "high";
     }
     if (band === "low") {
       lowconfEl.textContent = foldedChars < 8

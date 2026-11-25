@@ -15,6 +15,34 @@
  * local (partial-line) sequence-alignment re-rank with merge/split moves.
  * Works in browser (window.PanktiMatcher) and Node (module.exports).
  *
+ * Resilience rescoring (2026-11-25, owner-reported field failures — see
+ * docs/RESILIENCE-FIX.md for the full context, written for future devs):
+ *   Real users recite from memory and from kirtan, not from the page:
+ *   (a) an extra word from the NEXT pankti bleeds in (ਫਰੀਦਾ prepended to
+ *       the previous line — the two lines are adjacent on the Ang);
+ *   (b) the recitation starts mid-line and wraps (rotation);
+ *   (c) in kirtan, phrase chunks are sung out of written order — chunk
+ *       movement follows Punjabi's natural flexibility (vocative chunks
+ *       like ਭਾਈ ਰੇ move as a unit; words never interleave across chunks).
+ *   The old score (0.9 * sequential alignment) collapsed on all three:
+ *   one unmatched word or any reordering sank the correct pankti below
+ *   unrelated lines (measured: rank 1 -> rank 26 on case (a)).
+ *   Fix, deliberately the SIMPLE one: score = IDF-weighted word-set
+ *   overlap (order-free) as the primary term + the alignment score as a
+ *   bonus/tie-break only. An unmatched word now costs only its own IDF
+ *   share; reordering costs nothing in the primary term. NO chunk
+ *   segmentation, NO index change, and NO dependence on vishraam marks —
+ *   vishraams exist for Sri Guru Granth Sahib Ji but must not become a
+ *   foundation, because this engine is expected to extend to Dasam
+ *   Baani and other texts where a vishraam edition may not exist.
+ *
+ * SOURCE OF TRUTH / VENDORED COPIES: this file is the single source.
+ * The Gurbani Reader ships a vendored copy (search-matcher.js in
+ * KaramOfficial/gurbani-reader) and fetches the index from this
+ * project's live site. NEVER edit the vendored copy directly — edit
+ * here, run the full test suites, then copy this file over it and
+ * verify the md5 hashes match. Same rule for transliterate.js.
+ *
  * Index data (from build_index.py):
  *   vocab: { reciteFoldedWord: [idf, [panktiId, ...]], ... }
  *   panktis: [{id, a (ang), l (line idx), t (text), f (base-folded words),
@@ -305,6 +333,88 @@
     return tot ? hit / tot : 0;
   };
 
+  // Ultra-common particles, downweighted x0.35 in overlap weights
+  // (Gemini simplicity-check safeguard): they move freely in recitation
+  // and match everywhere, so they must not carry or sink a match.
+  // Stored as base forms; folded to recite keys at load below.
+  var PARTICLE_BASE = ["ਰੇ", "ਹੇ", "ਵੇ", "ਜੀ", "ਕਉ", "ਮਹਿ", "ਤੇ", "ਨਾਲ",
+    "ਸਿਉ", "ਹੈ", "ਹੋਇ", "ਭਇਆ", "ਮੈ", "ਤੂ", "ਜੋ", "ਸੋ", "ਨਾਨਕ"];
+  var PARTICLES = {};
+  PARTICLE_BASE.forEach(function (w) {
+    try { PARTICLES[reciteFoldWord(w)] = true; } catch (e) {}
+  });
+  function weightFactor(w) { return PARTICLES[w] ? 0.35 : 1; }
+
+  // IDF-weighted word-set overlap, order-free (resilience rescoring —
+  // see header; formula follows Gemini's simplicity-check answer):
+  //   BoW_Q = sum_i w(q_i) * best_sim(q_i) / W_Q
+  // normalised by QUERY weight only (never min(W_Q, W_P) — that would
+  // let 1-3 word panktis score 1.0 against longer queries). Matching is
+  // 1-to-1 MULTISET (repeated words match repeatedly, each target
+  // occurrence used once), rarest heard words first, phonetic sim
+  // clamped to 0 below 0.65, with a 1-step merge rescue (a heard word
+  // may match two adjacent target words joined, for ਸਤਿ ਗੁਰ <-> ਸਤਿਗੁਰੁ).
+  // A heard word's weight: its vocab idf (x particle factor), or if OOV
+  // the idf of the target word it matched, or a flat 3 unmatched.
+  Matcher.prototype.overlapScore = function (heard, T) {
+    var self = this;
+    function idfOf(w, dflt) { var e = self.vocab[w]; return e ? e[0] : dflt; }
+    var tCount = {};
+    T.forEach(function (t) { tCount[t] = (tCount[t] || 0) + 1; });
+    var order = heard.map(function (h, i) { return { h: h, i: i }; });
+    order.sort(function (a, b) { return idfOf(b.h, 3) - idfOf(a.h, 3); });
+    var used = {}, matched = 0, total = 0;
+    function take(t) { used[t] = (used[t] || 0) + 1; }
+    function avail(t) { return (used[t] || 0) < (tCount[t] || 0); }
+    order.forEach(function (item) {
+      var h = item.h, wH = idfOf(h, null), credit = 0;
+      if (wH !== null) wH *= weightFactor(h);
+      if (tCount[h] && avail(h)) {
+        take(h); credit = (wH !== null ? wH : idfOf(h, 1));
+        if (wH === null) wH = idfOf(h, 1);
+      } else {
+        var bestT = null, bestS = 0;
+        T.forEach(function (t) {
+          if (!avail(t)) return;
+          var s = simPhon(h, t);
+          if (s > bestS) { bestS = s; bestT = t; }
+        });
+        if (bestT !== null && bestS >= 0.65) {
+          take(bestT);
+          if (wH === null) wH = idfOf(bestT, 3) * weightFactor(h);
+          credit = wH * bestS;
+        } else {
+          // merge rescue: h ~ two adjacent target words joined
+          for (var j = 0; j + 1 < T.length; j++) {
+            if (!avail(T[j])) continue;
+            if (T[j] === T[j + 1]) { if ((tCount[T[j]] || 0) - (used[T[j]] || 0) < 2) continue; }
+            else if (!avail(T[j + 1])) continue;
+            var sm = simPhon(h, T[j] + T[j + 1]);
+            if (sm >= 0.65) {
+              take(T[j]); take(T[j + 1]);
+              if (wH === null) wH = idfOf(T[j], 3) * weightFactor(h);
+              credit = wH * sm; bestS = sm; break;
+            }
+          }
+          if (wH === null) wH = 3 * weightFactor(h);
+        }
+      }
+      total += wH; matched += credit;
+    });
+    return total ? Math.min(1, matched / total) : 0;
+  };
+
+  // Total query weight W_Q (same weighting as overlapScore, OOV = 3):
+  // drives the alpha blend in search().
+  Matcher.prototype.queryWeight = function (heard) {
+    var self = this, tot = 0;
+    heard.forEach(function (h) {
+      var e = self.vocab[h];
+      tot += (e ? e[0] : 3) * weightFactor(h);
+    });
+    return tot;
+  };
+
   function isContiguousSubseq(H, T) {
     if (!H.length || H.length > T.length) return false;
     outer:
@@ -316,10 +426,16 @@
   }
 
   // heardText: raw transcript string (Gurmukhi or romanized Latin) ->
-  // ranked top-k results. Score = 0.9*align + 0.1*IDF coverage, plus
-  // +0.05 contiguous phrase-order bonus and up to +0.01 unfolded-text
-  // micro-bonus (refrain-twin tie-break), clamped to [0,1]. This score IS
-  // the normalized score Gemini's confidence bands apply to (§1.4 Q5).
+  // ranked top-k results. RESILIENCE SCORING (2026-11-25, see header):
+  //   score = alpha * BoW_Q + (1 - alpha) * align + bonuses,
+  //   alpha = clamp((W_Q - 10) / 6, 0.25, 0.85)
+  // BoW_Q (overlapScore) is order-free and insertion-robust; the
+  // sequential alignment only carries real weight when the query's IDF
+  // mass is small (short / common-word queries, where order-free
+  // matching would collide). Bonuses unchanged: +0.05 contiguous
+  // phrase-order, up to +0.01 unfolded-text micro-bonus (refrain twins).
+  // Confidence bands for THIS score (apps): high >= 0.78, medium
+  // 0.60-0.77, low < 0.60 (Gemini recalibration, docs/RESILIENCE-FIX.md).
   Matcher.prototype.search = function (heardText, k) {
     k = k || 10;
     var pairs = foldHeardPairs(heardText);
@@ -327,6 +443,8 @@
     var heard = pairs.map(function (p) { return p.rec; });
     var heardPre = pairs.map(function (p) { return p.pre; });
     var self = this;
+    var WQ = this.queryWeight(heard);
+    var alpha = Math.max(0.25, Math.min(0.85, (WQ - 10) / 6));
     var candIds = this.candidates(heard);
     var results = candIds.map(function (id) {
       var p = self.panktis[id];
@@ -334,6 +452,7 @@
       var T = p.r || p.f;
       var align = self.alignScore(heard, T);
       var cov = self.idfCoverage(heard, T);
+      var ovl = self.overlapScore(heard, T);
       var bonus = 0;
       if (heard.length >= 2 && isContiguousSubseq(heard, T)) bonus += 0.05;
       if (p.f) {
@@ -346,15 +465,15 @@
       return {
         id: p.id, ang: p.a, line: p.l, text: p.t,
         start: p.s, end: p.e,
-        score: Math.round(Math.min(1, 0.9 * align + 0.1 * cov + bonus) * 1000) / 1000,
-        _align: align, _cov: cov
+        score: Math.round(Math.min(1, alpha * ovl + (1 - alpha) * align + bonus) * 1000) / 1000,
+        _align: align, _cov: cov, _ovl: ovl
       };
     }).filter(Boolean);
     results.sort(function (a, b) {
-      return b.score - a.score || b._cov - a._cov || a.ang - b.ang;
+      return b.score - a.score || b._ovl - a._ovl || b._cov - a._cov || a.ang - b.ang;
     });
     return results.slice(0, k).map(function (r) {
-      delete r._align; delete r._cov; return r;
+      delete r._align; delete r._cov; delete r._ovl; return r;
     });
   };
 

@@ -181,6 +181,29 @@ candidates are pre-ship fixes, not v2.
 
 ---
 
+### 1.5 Gemini follow-up verdict — resilience (REAL PASS, 2026-11-25)
+
+Same Gemini conversation as §1.4. Seven messages: the owner's two field
+failures (next-line bleed "fareeda" case; rotation case), kirtan chunk
+permutation, Punjabi grammar-aware reordering, chunk-boundary integrity,
+vishraam portability, and a simplicity check. Gemini's early answers
+proposed heavier machinery (asymmetric-gap Smith–Waterman rewrite,
+chunk segmentation with a five-signal boundary scorer, two-line window
+matching). Its FINAL answer superseded them: ship the simple rescoring
+— IDF-weighted word-set overlap (query-normalised) as the primary
+score, sequential alignment demoted to a blend/tie-break, α gated by
+query IDF mass, 1-to-1 multiset matching, particle downweighting, sim
+clamp 0.65, 1-step merge rescue — and treat chunking as optional
+Phase 2. "You do not need a chunking or segmentation pipeline."
+Warnings that shaped the shipped version: the min(W_Q, W_P)
+short-pankti trap, recalibrate confidence bands to the shipped score
+(a found match must not land on a "recite more" dead end), rotation
+can starve candidate generation (verify pool inclusion in tests —
+ours held). Owner constraints recorded with it: no vishraam
+dependence (Dasam Baani portability), fix in both deployed places via
+the one-source sync rule. **Shipped as specified — full record in
+docs/RESILIENCE-FIX.md.**
+
 ## 2. Matcher design
 
 Pipeline: `heard text → fold → candidate generation → re-rank → top 10`.
