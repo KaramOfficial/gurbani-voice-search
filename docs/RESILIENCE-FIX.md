@@ -120,3 +120,11 @@ site's live `data/`). Rules: edit ONLY here → run all four suites →
 copy the file over the vendored copy → verify md5 equality → deploy
 this repo first, then the Reader → run the named cases live on both
 surfaces. Same for `transliterate.js` / `search-transliterate.js`.
+**Always bump the `?v=` version on the script tags in BOTH repos'
+index.html when syncing** (learned 2026-11-25 the hard way: GitHub
+Pages serves each file with `Cache-Control: max-age=600`, and some
+CDN edges kept serving the pre-fix matcher 10+ minutes after the
+deploy was "built" — the owner retested three times, including a
+full browser restart, and kept getting the old code, while other
+edges already served the new file. A versioned URL is a new URL: no
+cache anywhere has it.)
